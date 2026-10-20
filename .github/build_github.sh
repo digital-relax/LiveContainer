@@ -41,7 +41,18 @@ mv ./tmp/SideStoreSupport.framework Payload/LiveContainer.app/Frameworks
 
 # download SideStore
 cd tmp
-wget https://github.com/LiveContainer/SideStore/releases/download/nightly/SideStore.ipa
+patched_release="https://github.com/digital-relax/SideStore/releases/download/adib-login-recovery-20261020"
+# Allow the SideStore macOS build to finish while Xcode archives LiveContainer.
+for attempt in $(seq 1 90); do
+    if curl -fsSL "$patched_release/SideStore.ipa" -o SideStore.ipa && \
+       curl -fsSL "$patched_release/SideStore.sha256" -o SideStore.sha256; then
+        break
+    fi
+    echo "Waiting for patched SideStore release: attempt $attempt/90"
+    sleep 20
+done
+# Verify that the SideStore IPA matches our released hash before embedding.
+shasum -a 256 -c SideStore.sha256 || exit 1
 unzip SideStore.ipa
 cd ..
 
