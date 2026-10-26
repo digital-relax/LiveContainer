@@ -41,7 +41,7 @@ mv ./tmp/SideStoreSupport.framework Payload/LiveContainer.app/Frameworks
 
 # download SideStore
 cd tmp
-patched_release="https://github.com/digital-relax/SideStore/releases/download/adib-login-recovery-20261020"
+patched_release="https://github.com/digital-relax/SideStore/releases/download/loginfix-1683-20261026"
 # Allow the SideStore macOS build to finish while Xcode archives LiveContainer.
 for attempt in $(seq 1 90); do
     if curl -fsSL "$patched_release/SideStore.ipa" -o SideStore.ipa && \
