@@ -1,5 +1,12 @@
-# copy lc
-wget https://github.com/LiveContainer/dylibify/releases/download/1.0/dylibify
+#!/bin/bash
+set -euo pipefail
+
+# Compile a native dylibify executable on the macOS build host.
+# The published binary only supports arm64 and cannot run on Intel.
+git clone --depth=1 https://github.com/LiveContainer/dylibify.git dylibify-src
+git -C dylibify-src fetch --depth=1 origin 5daf713df9fb07724510490c88aa8e00061be14a
+git -C dylibify-src checkout --detach 5daf713df9fb07724510490c88aa8e00061be14a
+clang dylibify-src/main.m -framework Foundation -fobjc-arc -o dylibify
 chmod +x dylibify
 brew install ldid
 
@@ -61,6 +68,10 @@ mv ./tmp/Payload/SideStore.app ./Payload/LiveContainer.app/Frameworks/SideStoreA
 ./dylibify ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/SideStore ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/SideStore.dylib
 rm ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/SideStore
 mv ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/SideStore.dylib ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/SideStore
+test -s ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/SideStore || {
+    echo "ERROR: Embedded SideStore executable missing" >&2
+    exit 1
+}
 ldid -S"" ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/SideStore
 cp ./.github/sidelc/LCAppInfo.plist ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/
 
@@ -78,8 +89,10 @@ mv ./Payload/LiveContainer.app/Frameworks/SideStoreApp.framework/PlugIns/AltWidg
 mv ./Payload/LiveContainer.app/PlugIns/LiveWidgetExtension.appex/AltWidgetExtension ./Payload/LiveContainer.app/PlugIns/LiveWidgetExtension.appex/LiveWidgetExtension
 
 # Sign
-rm -r .zsign_cache
-find payloadlc/Payload -type d -name "_CodeSignature" -exec rm -r {} +
+rm -rf .zsign_cache
+if [ -d payloadlc/Payload ]; then
+    find payloadlc/Payload -type d -name "_CodeSignature" -exec rm -rf {} +
+fi
 
 ldid -S.github/sidelc/LiveWidgetExtension_adhoc.xml ./Payload/LiveContainer.app/PlugIns/LiveWidgetExtension.appex/LiveWidgetExtension
 
